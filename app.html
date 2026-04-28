@@ -47,6 +47,8 @@
     .btn-primary:hover { background: var(--accent-dark); }
     .btn-danger { background: #fff0f0; color: #c62828; }
     .btn-danger:hover { background: #ffd5d5; }
+    .btn-secondary { background: #f0f2ff; color: var(--accent); }
+    .btn-secondary:hover { background: #e0e4ff; }
     .btn-sm { padding: 5px 12px; font-size: .8rem; }
 
     /* FORMS */
@@ -57,11 +59,20 @@
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); }
     .form-group textarea { resize: vertical; min-height: 70px; }
 
+    /* LANG TABS in form */
+    .form-lang-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
+    .form-lang-tab { padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: .82rem; font-weight: 700; background: #f0f2ff; color: #888; border: none; transition: background .15s; }
+    .form-lang-tab.active { background: var(--accent); color: #fff; }
+    .form-lang-panel { display: none; }
+    .form-lang-panel.active { display: block; }
+
     /* LIST */
     .category-block { margin-bottom: 24px; }
     .category-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #f0f2ff; border-radius: 10px; margin-bottom: 8px; }
     .category-name { font-weight: 700; color: #222; font-size: .95rem; }
     .dish-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fafafa; border: 1px solid #eee; border-radius: 8px; margin-bottom: 6px; }
+    .dish-img-thumb { width: 46px; height: 46px; border-radius: 8px; object-fit: cover; margin-right: 12px; flex-shrink: 0; background: #eee; }
+    .dish-img-placeholder { width: 46px; height: 46px; border-radius: 8px; background: #f0f2ff; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; flex-shrink: 0; }
     .dish-info { flex: 1; }
     .dish-name { font-weight: 600; font-size: .92rem; color: #222; }
     .dish-desc { font-size: .8rem; color: #888; margin-top: 2px; }
@@ -85,8 +96,32 @@
     .alert { padding: 10px 14px; border-radius: 8px; font-size: .88rem; margin-bottom: 14px; display: none; }
     .alert.success { background: #e8f5e9; color: #1b5e20; display: block; }
     .alert.error { background: #fdecea; color: #b71c1c; display: block; }
-
     .spinner-wrap { text-align: center; padding: 40px; color: #aaa; font-size: .9rem; }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,.45); z-index: 1000; display: none; align-items: center; justify-content: center; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 16px; padding: 28px; width: 580px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,.18); }
+    .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+    .modal-close { background: none; border: none; font-size: 1.4rem; cursor: pointer; color: #aaa; line-height: 1; }
+    .modal-close:hover { color: #333; }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+    /* STATS */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 20px; }
+    .stat-box { background: #fff; border-radius: 14px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.06); text-align: center; }
+    .stat-num { font-size: 2.2rem; font-weight: 800; color: var(--accent); }
+    .stat-lbl { font-size: .82rem; color: #888; margin-top: 4px; }
+
+    /* PREVIEW */
+    .preview-bar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; }
+    .preview-frame { width: 100%; height: 68vh; border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.1); }
+
+    /* IMAGE UPLOAD */
+    .img-upload-wrap { display: flex; align-items: center; gap: 14px; }
+    .img-thumb-preview { width: 70px; height: 70px; border-radius: 10px; object-fit: cover; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #ccc; background: #fafafa; flex-shrink: 0; overflow: hidden; cursor: pointer; }
+    .img-thumb-preview img { width: 100%; height: 100%; object-fit: cover; }
+    .upload-hint { font-size: .8rem; color: #999; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -98,13 +133,19 @@
     <div class="rest-name" id="sb-rest-name">...</div>
   </div>
   <nav class="sidebar-nav">
-    <div class="nav-item active" onclick="showSection('menu')">
+    <div class="nav-item active" onclick="showSection('menu',this)">
       <span class="icon">🍽</span><span id="nav-menu">Меню</span>
     </div>
-    <div class="nav-item" onclick="showSection('settings')">
+    <div class="nav-item" onclick="showSection('preview',this)">
+      <span class="icon">👁</span><span id="nav-preview">Предпросмотр</span>
+    </div>
+    <div class="nav-item" onclick="showSection('stats',this)">
+      <span class="icon">📊</span><span id="nav-stats">Статистика</span>
+    </div>
+    <div class="nav-item" onclick="showSection('settings',this)">
       <span class="icon">⚙️</span><span id="nav-settings">Настройки</span>
     </div>
-    <div class="nav-item" onclick="showSection('qr')">
+    <div class="nav-item" onclick="showSection('qr',this)">
       <span class="icon">📱</span><span id="nav-qr">QR-код</span>
     </div>
   </nav>
@@ -125,15 +166,14 @@
   </div>
   <div class="content">
 
-    <!-- МЕНЮ -->
+    <!-- ======= МЕНЮ ======= -->
     <div class="section active" id="section-menu">
-      <!-- Добавить категорию -->
       <div class="card">
         <div class="card-title"><span id="t-addCat">Добавить категорию</span></div>
         <div class="form-row">
           <div class="form-group" style="flex:2">
             <label id="t-catName">Название категории</label>
-            <input type="text" id="newCatName" id="t-catNamePH"/>
+            <input type="text" id="newCatName"/>
           </div>
           <div class="form-group" style="flex:0;align-self:flex-end">
             <button class="btn btn-primary" onclick="addCategory()" id="t-catBtn">+ Добавить</button>
@@ -141,14 +181,38 @@
         </div>
       </div>
 
-      <!-- Добавить блюдо -->
       <div class="card">
         <div class="card-title"><span id="t-addDish">Добавить блюдо</span></div>
-        <div class="form-row">
-          <div class="form-group" style="flex:2">
-            <label id="t-dishName">Название</label>
-            <input type="text" id="newDishName"/>
+
+        <!-- Мультиязычные поля -->
+        <div style="margin-bottom:14px">
+          <label style="font-size:.82rem;font-weight:600;color:#555;display:block;margin-bottom:8px" id="t-multiLangLabel">🌐 Название и описание (по языкам)</label>
+          <div class="form-lang-tabs">
+            <button class="form-lang-tab active" onclick="switchFormLang('ru','add')">🇷🇺 RU</button>
+            <button class="form-lang-tab" onclick="switchFormLang('en','add')">🇬🇧 EN</button>
+            <button class="form-lang-tab" onclick="switchFormLang('lv','add')">🇱🇻 LV</button>
           </div>
+          <div class="form-lang-panel active" id="add-panel-ru">
+            <div class="form-row">
+              <div class="form-group"><label id="t-dishName">Название (RU)</label><input type="text" id="newDishName"/></div>
+            </div>
+            <div class="form-group"><label id="t-dishDesc">Описание (RU)</label><textarea id="newDishDesc"></textarea></div>
+          </div>
+          <div class="form-lang-panel" id="add-panel-en" style="margin-top:8px">
+            <div class="form-row">
+              <div class="form-group"><label>Name (EN)</label><input type="text" id="newDishNameEn"/></div>
+            </div>
+            <div class="form-group"><label>Description (EN)</label><textarea id="newDishDescEn"></textarea></div>
+          </div>
+          <div class="form-lang-panel" id="add-panel-lv" style="margin-top:8px">
+            <div class="form-row">
+              <div class="form-group"><label>Nosaukums (LV)</label><input type="text" id="newDishNameLv"/></div>
+            </div>
+            <div class="form-group"><label>Apraksts (LV)</label><textarea id="newDishDescLv"></textarea></div>
+          </div>
+        </div>
+
+        <div class="form-row">
           <div class="form-group" style="flex:1">
             <label id="t-dishPrice">Цена</label>
             <input type="number" id="newDishPrice" min="0" step="0.01"/>
@@ -158,21 +222,68 @@
             <select id="newDishCat"></select>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label id="t-dishDesc">Описание</label>
-            <textarea id="newDishDesc"></textarea>
+
+        <!-- Фото блюда -->
+        <div class="form-group" style="margin-bottom:14px">
+          <label id="t-dishPhoto">📷 Фото блюда</label>
+          <div class="img-upload-wrap">
+            <div class="img-thumb-preview" id="newDishImgPreview" onclick="document.getElementById('newDishImgFile').click()">🍽</div>
+            <div>
+              <input type="file" id="newDishImgFile" accept="image/*" style="display:none" onchange="previewImg(this,'newDishImgPreview')"/>
+              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('newDishImgFile').click()" id="t-choosePhoto">📁 Выбрать фото</button>
+              <div class="upload-hint" id="t-photoHint">JPG, PNG до 2MB</div>
+            </div>
           </div>
         </div>
+
         <button class="btn btn-primary" onclick="addDish()" id="t-dishBtn">+ Добавить блюдо</button>
       </div>
 
-      <!-- Список -->
       <div class="alert" id="menu-alert"></div>
       <div id="menu-list"><div class="spinner-wrap">⏳ Загрузка...</div></div>
     </div>
 
-    <!-- НАСТРОЙКИ -->
+    <!-- ======= ПРЕДПРОСМОТР ======= -->
+    <div class="section" id="section-preview">
+      <div class="card" style="padding:16px 24px">
+        <div class="preview-bar">
+          <span id="t-previewHint" style="font-size:.88rem;color:#666">Так выглядит меню для ваших гостей</span>
+          <a id="preview-open-link" href="#" target="_blank">
+            <button class="btn btn-secondary btn-sm" id="t-openInTab">↗ Открыть в новой вкладке</button>
+          </a>
+          <button class="btn btn-primary btn-sm" onclick="reloadPreview()" id="t-refreshPreview">🔄 Обновить</button>
+        </div>
+        <iframe class="preview-frame" id="preview-iframe" src=""></iframe>
+      </div>
+    </div>
+
+    <!-- ======= СТАТИСТИКА ======= -->
+    <div class="section" id="section-stats">
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-num" id="stat-views">—</div>
+          <div class="stat-lbl" id="t-statViews">Просмотров меню</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-dishes">—</div>
+          <div class="stat-lbl" id="t-statDishes">Блюд в меню</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-cats">—</div>
+          <div class="stat-lbl" id="t-statCats">Категорий</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="stat-avail">—</div>
+          <div class="stat-lbl" id="t-statAvail">Доступно сейчас</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" id="t-statInfo">📌 Как считаются просмотры?</div>
+        <p style="font-size:.88rem;color:#666;line-height:1.6" id="t-statDesc">Каждый раз когда гость открывает публичное меню — счётчик увеличивается на 1. Данные хранятся в Supabase в поле <code>views</code> таблицы <code>restaurants</code>.</p>
+      </div>
+    </div>
+
+    <!-- ======= НАСТРОЙКИ ======= -->
     <div class="section" id="section-settings">
       <div class="card">
         <div class="card-title"><span id="t-settingsTitle">Настройки ресторана</span></div>
@@ -196,7 +307,7 @@
       </div>
     </div>
 
-    <!-- QR -->
+    <!-- ======= QR ======= -->
     <div class="section" id="section-qr">
       <div class="card">
         <div class="card-title"><span id="t-qrTitle">QR-код публичного меню</span></div>
@@ -214,6 +325,83 @@
   </div>
 </div>
 
+<!-- ======= EDIT MODAL ======= -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="t-editTitle">✏️ Редактировать блюдо</span>
+      <button class="modal-close" onclick="closeEditModal()">×</button>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <div class="form-lang-tabs">
+        <button class="form-lang-tab active" onclick="switchFormLang('ru','edit')">🇷🇺 RU</button>
+        <button class="form-lang-tab" onclick="switchFormLang('en','edit')">🇬🇧 EN</button>
+        <button class="form-lang-tab" onclick="switchFormLang('lv','edit')">🇱🇻 LV</button>
+      </div>
+      <div class="form-lang-panel active" id="edit-panel-ru">
+        <div class="form-group" style="margin-bottom:10px"><label>Название (RU)</label><input type="text" id="editDishName"/></div>
+        <div class="form-group"><label>Описание (RU)</label><textarea id="editDishDesc"></textarea></div>
+      </div>
+      <div class="form-lang-panel" id="edit-panel-en" style="margin-top:8px">
+        <div class="form-group" style="margin-bottom:10px"><label>Name (EN)</label><input type="text" id="editDishNameEn"/></div>
+        <div class="form-group"><label>Description (EN)</label><textarea id="editDishDescEn"></textarea></div>
+      </div>
+      <div class="form-lang-panel" id="edit-panel-lv" style="margin-top:8px">
+        <div class="form-group" style="margin-bottom:10px"><label>Nosaukums (LV)</label><input type="text" id="editDishNameLv"/></div>
+        <div class="form-group"><label>Apraksts (LV)</label><textarea id="editDishDescLv"></textarea></div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label id="t-editPrice">Цена</label>
+        <input type="number" id="editDishPrice" min="0" step="0.01"/>
+      </div>
+      <div class="form-group">
+        <label id="t-editCat">Категория</label>
+        <select id="editDishCat"></select>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:14px">
+      <label>📷 Фото</label>
+      <div class="img-upload-wrap">
+        <div class="img-thumb-preview" id="editDishImgPreview" onclick="document.getElementById('editDishImgFile').click()">🍽</div>
+        <div>
+          <input type="file" id="editDishImgFile" accept="image/*" style="display:none" onchange="previewImg(this,'editDishImgPreview')"/>
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('editDishImgFile').click()">📁 Изменить фото</button>
+        </div>
+      </div>
+    </div>
+
+    <input type="hidden" id="editDishId"/>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditModal()" id="t-editCancel">Отмена</button>
+      <button class="btn btn-primary" onclick="saveEditDish()" id="t-editSave">💾 Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT CATEGORY MODAL -->
+<div class="modal-overlay" id="editCatModal">
+  <div class="modal" style="width:400px">
+    <div class="modal-title">
+      <span id="t-editCatTitle">✏️ Редактировать категорию</span>
+      <button class="modal-close" onclick="closeEditCatModal()">×</button>
+    </div>
+    <div class="form-group" style="margin-bottom:20px">
+      <label id="t-editCatName">Название</label>
+      <input type="text" id="editCatName"/>
+    </div>
+    <input type="hidden" id="editCatId"/>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeEditCatModal()" id="t-editCatCancel">Отмена</button>
+      <button class="btn btn-primary" onclick="saveEditCat()" id="t-editCatSave">💾 Сохранить</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 var MF_DB = supabase.createClient('https://axidlwsjtgpehogbbjnt.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4aWRsd3NqdGdwZWhvZ2Jiam50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTEwNzgsImV4cCI6MjA5MjgyNzA3OH0.wPkXnLrxWHnRKnc1uMv1Z7YRcRDaOI2BiIAEInx3DIs');
@@ -225,45 +413,41 @@ var categories = [];
 var dishes = [];
 
 var T = {
-  ru: { menu:'Меню', settings:'Настройки', qr:'QR-код', logout:'Выйти', pageMenu:'Управление меню', pageSettings:'Настройки', pageQr:'QR-код', addCat:'Добавить категорию', catName:'Название категории', catNamePH:'Например: Горячие блюда', catBtn:'+ Добавить', addDish:'Добавить блюдо', dishName:'Название', dishPrice:'Цена', dishCat:'Категория', dishDesc:'Описание', dishBtn:'+ Добавить блюдо', settingsTitle:'Настройки ресторана', restName:'Название ресторана', themeLabel:'Тема оформления', saveBtn:'💾 Сохранить', qrTitle:'QR-код публичного меню', qrDownload:'⬇️ Скачать QR', noCat:'Без категории', noItems:'Пока пусто', saved:'Сохранено!', errSave:'Ошибка сохранения', delConfirm:'Удалить?' },
-  en: { menu:'Menu', settings:'Settings', qr:'QR Code', logout:'Sign Out', pageMenu:'Menu Management', pageSettings:'Settings', pageQr:'QR Code', addCat:'Add Category', catName:'Category name', catNamePH:'E.g.: Hot dishes', catBtn:'+ Add', addDish:'Add Dish', dishName:'Name', dishPrice:'Price', dishCat:'Category', dishDesc:'Description', dishBtn:'+ Add dish', settingsTitle:'Restaurant Settings', restName:'Restaurant name', themeLabel:'Color theme', saveBtn:'💾 Save', qrTitle:'Public Menu QR Code', qrDownload:'⬇️ Download QR', noCat:'No category', noItems:'Nothing here yet', saved:'Saved!', errSave:'Save error', delConfirm:'Delete?' },
-  lv: { menu:'Izvēlne', settings:'Iestatījumi', qr:'QR kods', logout:'Iziet', pageMenu:'Izvēlnes pārvaldība', pageSettings:'Iestatījumi', pageQr:'QR kods', addCat:'Pievienot kategoriju', catName:'Kategorijas nosaukums', catNamePH:'Piemēram: Karstie ēdieni', catBtn:'+ Pievienot', addDish:'Pievienot ēdienu', dishName:'Nosaukums', dishPrice:'Cena', dishCat:'Kategorija', dishDesc:'Apraksts', dishBtn:'+ Pievienot ēdienu', settingsTitle:'Restorāna iestatījumi', restName:'Restorāna nosaukums', themeLabel:'Krāsu tēma', saveBtn:'💾 Saglabāt', qrTitle:'Publiskās izvēlnes QR kods', qrDownload:'⬇️ Lejupielādēt QR', noCat:'Bez kategorijas', noItems:'Pagaidām tukšs', saved:'Saglabāts!', errSave:'Saglabāšanas kļūda', delConfirm:'Dzēst?' }
+  ru: { menu:'Меню', preview:'Предпросмотр', stats:'Статистика', settings:'Настройки', qr:'QR-код', logout:'Выйти', pageMenu:'Управление меню', pagePreview:'Предпросмотр меню', pageStats:'Статистика', pageSettings:'Настройки', pageQr:'QR-код', addCat:'Добавить категорию', catName:'Название категории', catNamePH:'Например: Горячие блюда', catBtn:'+ Добавить', addDish:'Добавить блюдо', dishName:'Название (RU)', dishPrice:'Цена', dishCat:'Категория', dishDesc:'Описание (RU)', dishBtn:'+ Добавить блюдо', settingsTitle:'Настройки ресторана', restName:'Название ресторана', themeLabel:'Тема оформления', saveBtn:'💾 Сохранить', qrTitle:'QR-код публичного меню', qrDownload:'⬇️ Скачать QR', noCat:'Без категории', noItems:'Пока пусто', saved:'Сохранено!', errSave:'Ошибка сохранения', delConfirm:'Удалить?', choosePhoto:'📁 Выбрать фото', photoHint:'JPG, PNG до 2MB', previewHint:'Так выглядит меню для ваших гостей', openInTab:'↗ Открыть в новой вкладке', refreshPreview:'🔄 Обновить', statViews:'Просмотров меню', statDishes:'Блюд в меню', statCats:'Категорий', statAvail:'Доступно сейчас', statInfo:'📌 Как считаются просмотры?', statDesc:'Каждый раз когда гость открывает публичное меню — счётчик увеличивается на 1.', multiLangLabel:'🌐 Название и описание (по языкам)', editTitle:'✏️ Редактировать блюдо', editPrice:'Цена', editCat:'Категория', editCancel:'Отмена', editSave:'💾 Сохранить', editCatTitle:'✏️ Редактировать категорию', editCatName:'Название', editCatCancel:'Отмена', editCatSave:'💾 Сохранить' },
+  en: { menu:'Menu', preview:'Preview', stats:'Statistics', settings:'Settings', qr:'QR Code', logout:'Sign Out', pageMenu:'Menu Management', pagePreview:'Menu Preview', pageStats:'Statistics', pageSettings:'Settings', pageQr:'QR Code', addCat:'Add Category', catName:'Category name', catNamePH:'E.g.: Hot dishes', catBtn:'+ Add', addDish:'Add Dish', dishName:'Name (RU)', dishPrice:'Price', dishCat:'Category', dishDesc:'Description (RU)', dishBtn:'+ Add dish', settingsTitle:'Restaurant Settings', restName:'Restaurant name', themeLabel:'Color theme', saveBtn:'💾 Save', qrTitle:'Public Menu QR Code', qrDownload:'⬇️ Download QR', noCat:'No category', noItems:'Nothing here yet', saved:'Saved!', errSave:'Save error', delConfirm:'Delete?', choosePhoto:'📁 Choose photo', photoHint:'JPG, PNG up to 2MB', previewHint:'This is how guests see your menu', openInTab:'↗ Open in new tab', refreshPreview:'🔄 Refresh', statViews:'Menu views', statDishes:'Dishes', statCats:'Categories', statAvail:'Available now', statInfo:'📌 How are views counted?', statDesc:'Every time a guest opens the public menu — counter increases by 1.', multiLangLabel:'🌐 Name & description (by language)', editTitle:'✏️ Edit dish', editPrice:'Price', editCat:'Category', editCancel:'Cancel', editSave:'💾 Save', editCatTitle:'✏️ Edit category', editCatName:'Name', editCatCancel:'Cancel', editCatSave:'💾 Save' },
+  lv: { menu:'Izvēlne', preview:'Priekšskatījums', stats:'Statistika', settings:'Iestatījumi', qr:'QR kods', logout:'Iziet', pageMenu:'Izvēlnes pārvaldība', pagePreview:'Izvēlnes priekšskatījums', pageStats:'Statistika', pageSettings:'Iestatījumi', pageQr:'QR kods', addCat:'Pievienot kategoriju', catName:'Kategorijas nosaukums', catNamePH:'Piemēram: Karstie ēdieni', catBtn:'+ Pievienot', addDish:'Pievienot ēdienu', dishName:'Nosaukums (RU)', dishPrice:'Cena', dishCat:'Kategorija', dishDesc:'Apraksts (RU)', dishBtn:'+ Pievienot ēdienu', settingsTitle:'Restorāna iestatījumi', restName:'Restorāna nosaukums', themeLabel:'Krāsu tēma', saveBtn:'💾 Saglabāt', qrTitle:'Publiskās izvēlnes QR kods', qrDownload:'⬇️ Lejupielādēt QR', noCat:'Bez kategorijas', noItems:'Pagaidām tukšs', saved:'Saglabāts!', errSave:'Saglabāšanas kļūda', delConfirm:'Dzēst?', choosePhoto:'📁 Izvēlēties foto', photoHint:'JPG, PNG līdz 2MB', previewHint:'Tā viesi redz jūsu izvēlni', openInTab:'↗ Atvērt jaunā cilnē', refreshPreview:'🔄 Atjaunot', statViews:'Izvēlnes skatījumi', statDishes:'Ēdieni', statCats:'Kategorijas', statAvail:'Pieejams tagad', statInfo:'📌 Kā tiek skaitīti skatījumi?', statDesc:'Katru reizi kad viesis atver publisko izvēlni — skaitītājs palielinās par 1.', multiLangLabel:'🌐 Nosaukums un apraksts (pēc valodas)', editTitle:'✏️ Rediģēt ēdienu', editPrice:'Cena', editCat:'Kategorija', editCancel:'Atcelt', editSave:'💾 Saglabāt', editCatTitle:'✏️ Rediģēt kategoriju', editCatName:'Nosaukums', editCatCancel:'Atcelt', editCatSave:'💾 Saglabāt' }
 };
 
+/* ============ LANG ============ */
 function setLang(l) { currentLang = l; localStorage.setItem('mf_lang', l); applyLang(); }
 
 function applyLang() {
   var t = T[currentLang];
-  document.getElementById('nav-menu').textContent     = t.menu;
-  document.getElementById('nav-settings').textContent = t.settings;
-  document.getElementById('nav-qr').textContent       = t.qr;
-  document.getElementById('nav-logout').textContent   = t.logout;
-  document.getElementById('t-addCat').textContent     = t.addCat;
-  document.getElementById('t-catName').textContent    = t.catName;
-  document.getElementById('t-catBtn').textContent     = t.catBtn;
-  document.getElementById('t-addDish').textContent    = t.addDish;
-  document.getElementById('t-dishName').textContent   = t.dishName;
-  document.getElementById('t-dishPrice').textContent  = t.dishPrice;
-  document.getElementById('t-dishCat').textContent    = t.dishCat;
-  document.getElementById('t-dishDesc').textContent   = t.dishDesc;
-  document.getElementById('t-dishBtn').textContent    = t.dishBtn;
-  document.getElementById('t-settingsTitle').textContent = t.settingsTitle;
-  document.getElementById('t-restName').textContent   = t.restName;
-  document.getElementById('t-themeLabel').textContent = t.themeLabel;
-  document.getElementById('t-saveBtn').textContent    = t.saveBtn;
-  document.getElementById('t-qrTitle').textContent    = t.qrTitle;
-  document.getElementById('t-qrDownload').textContent = t.qrDownload;
-  document.getElementById('newCatName').placeholder   = t.catNamePH;
-  document.querySelectorAll('.lang-btn').forEach(function(b) {
-    b.classList.toggle('active', b.textContent === currentLang.toUpperCase());
-  });
+  var ids = { 'nav-menu':'menu', 'nav-preview':'preview', 'nav-stats':'stats', 'nav-settings':'settings', 'nav-qr':'qr', 'nav-logout':'logout', 't-addCat':'addCat', 't-catName':'catName', 't-catBtn':'catBtn', 't-addDish':'addDish', 't-dishName':'dishName', 't-dishPrice':'dishPrice', 't-dishCat':'dishCat', 't-dishDesc':'dishDesc', 't-dishBtn':'dishBtn', 't-settingsTitle':'settingsTitle', 't-restName':'restName', 't-themeLabel':'themeLabel', 't-saveBtn':'saveBtn', 't-qrTitle':'qrTitle', 't-qrDownload':'qrDownload', 't-multiLangLabel':'multiLangLabel', 't-choosePhoto':'choosePhoto', 't-photoHint':'photoHint', 't-previewHint':'previewHint', 't-openInTab':'openInTab', 't-refreshPreview':'refreshPreview', 't-statViews':'statViews', 't-statDishes':'statDishes', 't-statCats':'statCats', 't-statAvail':'statAvail', 't-statInfo':'statInfo', 't-statDesc':'statDesc', 't-editTitle':'editTitle', 't-editPrice':'editPrice', 't-editCat':'editCat', 't-editCancel':'editCancel', 't-editSave':'editSave', 't-editCatTitle':'editCatTitle', 't-editCatName':'editCatName', 't-editCatCancel':'editCatCancel', 't-editCatSave':'editCatSave' };
+  Object.keys(ids).forEach(function(id) { var el = document.getElementById(id); if (el) el.textContent = t[ids[id]]; });
+  document.getElementById('newCatName').placeholder = t.catNamePH;
+  document.querySelectorAll('.lang-btn').forEach(function(b) { b.classList.toggle('active', b.textContent === currentLang.toUpperCase()); });
   var active = document.querySelector('.nav-item.active');
   if (active) {
-    var sec = active.getAttribute('onclick').match(/'(\w+)'/)[1];
-    document.getElementById('page-title').textContent = t['page' + sec.charAt(0).toUpperCase() + sec.slice(1)] || '';
+    var m = active.getAttribute('onclick').match(/'(\w+)'/);
+    if (m) document.getElementById('page-title').textContent = t['page' + m[1].charAt(0).toUpperCase() + m[1].slice(1)] || '';
   }
 }
 
+/* ============ FORM LANG TABS ============ */
+function switchFormLang(lang, form) {
+  var prefix = form + '-panel-';
+  ['ru','en','lv'].forEach(function(l) {
+    var panel = document.getElementById(prefix + l);
+    if (panel) panel.classList.toggle('active', l === lang);
+  });
+  var container = form === 'add' ? document.querySelector('#section-menu .form-lang-tabs') : document.querySelector('#editModal .form-lang-tabs');
+  if (container) container.querySelectorAll('.form-lang-tab').forEach(function(btn, i) {
+    btn.classList.toggle('active', ['ru','en','lv'][i] === lang);
+  });
+}
+
+/* ============ THEME ============ */
 function selectTheme(el) {
   document.querySelectorAll('.theme-dot').forEach(function(d) { d.classList.remove('selected'); });
   el.classList.add('selected');
@@ -278,21 +462,23 @@ function applyTheme(theme) {
   document.documentElement.style.setProperty('--accent', c[0]);
   document.documentElement.style.setProperty('--accent-dark', c[1]);
   currentTheme = theme;
-  document.querySelectorAll('.theme-dot').forEach(function(d) {
-    d.classList.toggle('selected', d.getAttribute('data-theme') === theme);
-  });
+  document.querySelectorAll('.theme-dot').forEach(function(d) { d.classList.toggle('selected', d.getAttribute('data-theme') === theme); });
 }
 
-function showSection(name) {
+/* ============ SECTIONS ============ */
+function showSection(name, el) {
   document.querySelectorAll('.section').forEach(function(s) { s.classList.remove('active'); });
   document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
   document.getElementById('section-' + name).classList.add('active');
-  event.currentTarget.classList.add('active');
+  if (el) el.classList.add('active');
   document.getElementById('page-title').textContent = T[currentLang]['page' + name.charAt(0).toUpperCase() + name.slice(1)] || name;
   if (name === 'qr') generateQR();
   if (name === 'settings') loadSettings();
+  if (name === 'preview') loadPreview();
+  if (name === 'stats') loadStats();
 }
 
+/* ============ AUTH ============ */
 async function logout() {
   await MF_DB.auth.signOut();
   window.location.href = 'login.html';
@@ -307,6 +493,7 @@ async function init() {
   applyLang();
 }
 
+/* ============ RESTAURANT ============ */
 async function loadRestaurant() {
   var { data } = await MF_DB.from('restaurants').select('*').eq('id', currentUser.id).single();
   if (data) {
@@ -318,17 +505,19 @@ async function loadRestaurant() {
   }
 }
 
+/* ============ MENU ============ */
 async function loadMenu() {
-  var { data: cats } = await MF_DB.from('categories').select('*').eq('restaurant_id', currentUser.id).order('position');
+  var { data: cats }  = await MF_DB.from('categories').select('*').eq('restaurant_id', currentUser.id).order('position');
   var { data: dishs } = await MF_DB.from('dishes').select('*').eq('restaurant_id', currentUser.id).order('position');
-  categories = cats || [];
-  dishes = dishs || [];
+  categories = cats  || [];
+  dishes     = dishs || [];
   renderMenu();
-  renderCatSelect();
+  renderCatSelect('newDishCat');
 }
 
-function renderCatSelect() {
-  var sel = document.getElementById('newDishCat');
+function renderCatSelect(selId) {
+  var sel = document.getElementById(selId);
+  if (!sel) return;
   sel.innerHTML = '<option value="">' + T[currentLang].noCat + '</option>';
   categories.forEach(function(c) {
     var o = document.createElement('option');
@@ -338,13 +527,12 @@ function renderCatSelect() {
 
 function renderMenu() {
   var el = document.getElementById('menu-list');
-  if (!categories.length && !dishes.length) {
-    el.innerHTML = '<div class="empty-state">🍽 ' + T[currentLang].noItems + '</div>'; return;
-  }
+  if (!categories.length && !dishes.length) { el.innerHTML = '<div class="empty-state">🍽 ' + T[currentLang].noItems + '</div>'; return; }
   var html = '';
   categories.forEach(function(cat) {
     var catDishes = dishes.filter(function(d) { return d.category_id === cat.id; });
-    html += '<div class="category-block"><div class="category-header"><span class="category-name">📂 ' + esc(cat.name) + '</span><button class="btn btn-danger btn-sm" onclick="deleteCategory(\'' + cat.id + '\')">🗑</button></div>';
+    html += '<div class="category-block"><div class="category-header"><span class="category-name">📂 ' + esc(cat.name) + '</span>';
+    html += '<div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openEditCat(\'' + cat.id + '\')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteCategory(\'' + cat.id + '\')">🗑</button></div></div>';
     if (!catDishes.length) html += '<div style="padding:8px 14px;color:#bbb;font-size:.85rem">' + T[currentLang].noItems + '</div>';
     catDishes.forEach(function(d) { html += dishHTML(d); });
     html += '</div>';
@@ -359,22 +547,51 @@ function renderMenu() {
 }
 
 function dishHTML(d) {
-  return '<div class="dish-item"><div class="dish-info"><div class="dish-name">' + esc(d.name) + '</div>' +
+  var imgHtml = d.image_url
+    ? '<img class="dish-img-thumb" src="' + esc(d.image_url) + '" alt="">' 
+    : '<div class="dish-img-placeholder">🍽</div>';
+  return '<div class="dish-item">' + imgHtml +
+    '<div class="dish-info"><div class="dish-name">' + esc(d.name) + '</div>' +
     (d.description ? '<div class="dish-desc">' + esc(d.description) + '</div>' : '') + '</div>' +
     '<div class="dish-price">' + (d.price ? d.price + ' €' : '—') + '</div>' +
     '<div class="dish-actions">' +
-    '<button class="toggle-available" title="Доступность" onclick="toggleDish(\'' + d.id + '\',' + d.available + ')">' + (d.available ? '✅' : '❌') + '</button>' +
+    '<button class="toggle-available" onclick="toggleDish(\'' + d.id + '\',' + d.available + ')">' + (d.available ? '✅' : '❌') + '</button>' +
+    '<button class="btn btn-secondary btn-sm" onclick="openEditDish(\'' + d.id + '\')">✏️</button>' +
     '<button class="btn btn-danger btn-sm" onclick="deleteDish(\'' + d.id + '\')">🗑</button>' +
     '</div></div>';
 }
 
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+/* ============ IMAGE PREVIEW ============ */
+function previewImg(input, previewId) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var el = document.getElementById(previewId);
+    el.innerHTML = '<img src="' + e.target.result + '">';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function uploadImage(file, dishId) {
+  if (!file) return null;
+  var ext = file.name.split('.').pop();
+  var path = currentUser.id + '/' + (dishId || Date.now()) + '.' + ext;
+  var { data, error } = await MF_DB.storage.from('dish-images').upload(path, file, { upsert: true });
+  if (error) { console.warn('Image upload error:', error.message); return null; }
+  var { data: urlData } = MF_DB.storage.from('dish-images').getPublicUrl(path);
+  return urlData.publicUrl;
+}
+
+/* ============ ADD CATEGORY ============ */
 async function addCategory() {
   var name = document.getElementById('newCatName').value.trim();
   if (!name) return;
-  var { error } = await MF_DB.from('categories').insert({ restaurant_id: currentUser.id, name: name, position: categories.length });
-  if (!error) { document.getElementById('newCatName').value = ''; await loadMenu(); }
+  await MF_DB.from('categories').insert({ restaurant_id: currentUser.id, name: name, position: categories.length });
+  document.getElementById('newCatName').value = '';
+  await loadMenu();
 }
 
 async function deleteCategory(id) {
@@ -383,17 +600,53 @@ async function deleteCategory(id) {
   await loadMenu();
 }
 
-async function addDish() {
-  var name  = document.getElementById('newDishName').value.trim();
-  var price = document.getElementById('newDishPrice').value;
-  var catId = document.getElementById('newDishCat').value || null;
-  var desc  = document.getElementById('newDishDesc').value.trim();
+/* ============ EDIT CATEGORY ============ */
+function openEditCat(id) {
+  var cat = categories.find(function(c) { return c.id === id; });
+  if (!cat) return;
+  document.getElementById('editCatId').value = id;
+  document.getElementById('editCatName').value = cat.name;
+  document.getElementById('editCatModal').classList.add('open');
+}
+
+function closeEditCatModal() { document.getElementById('editCatModal').classList.remove('open'); }
+
+async function saveEditCat() {
+  var id   = document.getElementById('editCatId').value;
+  var name = document.getElementById('editCatName').value.trim();
   if (!name) return;
-  var { error } = await MF_DB.from('dishes').insert({ restaurant_id: currentUser.id, name: name, price: price || null, category_id: catId, description: desc, position: dishes.length });
+  await MF_DB.from('categories').update({ name: name }).eq('id', id);
+  closeEditCatModal();
+  await loadMenu();
+}
+
+/* ============ ADD DISH ============ */
+async function addDish() {
+  var name    = document.getElementById('newDishName').value.trim();
+  var nameEn  = document.getElementById('newDishNameEn').value.trim();
+  var nameLv  = document.getElementById('newDishNameLv').value.trim();
+  var price   = document.getElementById('newDishPrice').value;
+  var catId   = document.getElementById('newDishCat').value || null;
+  var desc    = document.getElementById('newDishDesc').value.trim();
+  var descEn  = document.getElementById('newDishDescEn').value.trim();
+  var descLv  = document.getElementById('newDishDescLv').value.trim();
+  var imgFile = document.getElementById('newDishImgFile').files[0];
+  if (!name) return;
+
+  var imageUrl = imgFile ? await uploadImage(imgFile, Date.now()) : null;
+
+  var payload = { restaurant_id: currentUser.id, name: name, price: price || null, category_id: catId, description: desc, position: dishes.length };
+  if (nameEn)  payload.name_en   = nameEn;
+  if (nameLv)  payload.name_lv   = nameLv;
+  if (descEn)  payload.desc_en   = descEn;
+  if (descLv)  payload.desc_lv   = descLv;
+  if (imageUrl) payload.image_url = imageUrl;
+
+  var { error } = await MF_DB.from('dishes').insert(payload);
   if (!error) {
-    document.getElementById('newDishName').value = '';
-    document.getElementById('newDishPrice').value = '';
-    document.getElementById('newDishDesc').value = '';
+    ['newDishName','newDishNameEn','newDishNameLv','newDishPrice','newDishDesc','newDishDescEn','newDishDescLv'].forEach(function(id) { document.getElementById(id).value = ''; });
+    document.getElementById('newDishImgPreview').innerHTML = '🍽';
+    document.getElementById('newDishImgFile').value = '';
     await loadMenu();
   }
 }
@@ -409,6 +662,51 @@ async function toggleDish(id, current) {
   await loadMenu();
 }
 
+/* ============ EDIT DISH ============ */
+function openEditDish(id) {
+  var d = dishes.find(function(x) { return x.id === id; });
+  if (!d) return;
+  document.getElementById('editDishId').value       = id;
+  document.getElementById('editDishName').value     = d.name || '';
+  document.getElementById('editDishNameEn').value   = d.name_en || '';
+  document.getElementById('editDishNameLv').value   = d.name_lv || '';
+  document.getElementById('editDishDesc').value     = d.description || '';
+  document.getElementById('editDishDescEn').value   = d.desc_en || '';
+  document.getElementById('editDishDescLv').value   = d.desc_lv || '';
+  document.getElementById('editDishPrice').value    = d.price || '';
+  var prev = document.getElementById('editDishImgPreview');
+  prev.innerHTML = d.image_url ? '<img src="' + d.image_url + '">' : '🍽';
+  renderCatSelect('editDishCat');
+  document.getElementById('editDishCat').value = d.category_id || '';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() { document.getElementById('editModal').classList.remove('open'); }
+
+async function saveEditDish() {
+  var id      = document.getElementById('editDishId').value;
+  var name    = document.getElementById('editDishName').value.trim();
+  var nameEn  = document.getElementById('editDishNameEn').value.trim();
+  var nameLv  = document.getElementById('editDishNameLv').value.trim();
+  var price   = document.getElementById('editDishPrice').value;
+  var catId   = document.getElementById('editDishCat').value || null;
+  var desc    = document.getElementById('editDishDesc').value.trim();
+  var descEn  = document.getElementById('editDishDescEn').value.trim();
+  var descLv  = document.getElementById('editDishDescLv').value.trim();
+  var imgFile = document.getElementById('editDishImgFile').files[0];
+  if (!name) return;
+
+  var imageUrl = imgFile ? await uploadImage(imgFile, id) : undefined;
+
+  var payload = { name: name, name_en: nameEn, name_lv: nameLv, price: price || null, category_id: catId, description: desc, desc_en: descEn, desc_lv: descLv };
+  if (imageUrl !== undefined) payload.image_url = imageUrl;
+
+  await MF_DB.from('dishes').update(payload).eq('id', id);
+  closeEditModal();
+  await loadMenu();
+}
+
+/* ============ SETTINGS ============ */
 function loadSettings() {
   if (restaurant) {
     document.getElementById('settingRestName').value = restaurant.name || '';
@@ -431,13 +729,37 @@ async function saveSettings() {
   }
 }
 
+/* ============ QR ============ */
 function generateQR() {
   if (!currentUser) return;
-  var publicUrl = 'https://headymanner.github.io/MenuFlow/menu.html?id=' + currentUser.id;
+  var publicUrl = 'https://menuflow.tech/menu.html?id=' + currentUser.id;
   var qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(publicUrl);
   document.getElementById('qr-img').src = qrApi;
   document.getElementById('qr-url').textContent = publicUrl;
   document.getElementById('qr-download').href = qrApi;
+}
+
+/* ============ PREVIEW ============ */
+function loadPreview() {
+  if (!currentUser) return;
+  var url = 'https://menuflow.tech/menu.html?id=' + currentUser.id;
+  document.getElementById('preview-iframe').src = url;
+  document.getElementById('preview-open-link').href = url;
+}
+
+function reloadPreview() {
+  var iframe = document.getElementById('preview-iframe');
+  iframe.src = iframe.src;
+}
+
+/* ============ STATS ============ */
+async function loadStats() {
+  document.getElementById('stat-dishes').textContent = dishes.length;
+  document.getElementById('stat-cats').textContent   = categories.length;
+  var avail = dishes.filter(function(d) { return d.available !== false; }).length;
+  document.getElementById('stat-avail').textContent  = avail;
+  var views = (restaurant && restaurant.views) ? restaurant.views : '—';
+  document.getElementById('stat-views').textContent  = views;
 }
 
 init();
