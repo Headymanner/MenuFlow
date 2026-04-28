@@ -589,12 +589,8 @@ async function uploadImage(file, dishId) {
 async function addCategory() {
   var name = document.getElementById('newCatName').value.trim();
   if (!name) return;
-  var alertEl = document.getElementById('menu-alert');
-  var { error } = await MF_DB.from('categories').insert({ restaurant_id: currentUser.id, name: name, position: categories.length });
-  if (error) { alertEl.className = 'alert error'; alertEl.textContent = '❌ Категория: ' + error.message; return; }
+  await MF_DB.from('categories').insert({ restaurant_id: currentUser.id, name: name, position: categories.length });
   document.getElementById('newCatName').value = '';
-  alertEl.className = 'alert success'; alertEl.textContent = '✅ Категория добавлена!';
-  setTimeout(function() { alertEl.className = 'alert'; }, 2000);
   await loadMenu();
 }
 
@@ -635,7 +631,13 @@ async function addDish() {
   var descEn  = document.getElementById('newDishDescEn').value.trim();
   var descLv  = document.getElementById('newDishDescLv').value.trim();
   var imgFile = document.getElementById('newDishImgFile').files[0];
-  if (!name) return;
+  var alertEl = document.getElementById('menu-alert');
+  if (!name) {
+    alertEl.className = 'alert error';
+    alertEl.textContent = '❌ Введите название блюда!';
+    setTimeout(function() { alertEl.className = 'alert'; }, 3000);
+    return;
+  }
 
   var imageUrl = imgFile ? await uploadImage(imgFile, Date.now()) : null;
 
