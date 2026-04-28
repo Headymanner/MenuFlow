@@ -419,7 +419,7 @@ var T = {
 };
 
 /* ============ LANG ============ */
-function setLang(l) { currentLang = l; localStorage.setItem('mf_lang', l); applyLang(); renderCatSelect('newDishCat'); renderCatSelect('editDishCat'); }
+function setLang(l) { currentLang = l; localStorage.setItem('mf_lang', l); applyLang(); renderMenu(); renderCatSelect('newDishCat'); renderCatSelect('editDishCat'); }
 
 function applyLang() {
   var t = T[currentLang];
@@ -643,11 +643,16 @@ async function addDish() {
   if (imageUrl) payload.image_url = imageUrl;
 
   var { error } = await MF_DB.from('dishes').insert(payload);
+  var alertEl = document.getElementById('menu-alert');
   if (!error) {
     ['newDishName','newDishNameEn','newDishNameLv','newDishPrice','newDishDesc','newDishDescEn','newDishDescLv'].forEach(function(id) { document.getElementById(id).value = ''; });
     document.getElementById('newDishImgPreview').innerHTML = '🍽';
     document.getElementById('newDishImgFile').value = '';
+    alertEl.className = 'alert success'; alertEl.textContent = T[currentLang].saved;
+    setTimeout(function() { alertEl.className = 'alert'; }, 2000);
     await loadMenu();
+  } else {
+    alertEl.className = 'alert error'; alertEl.textContent = '❌ ' + error.message;
   }
 }
 
@@ -698,12 +703,16 @@ async function saveEditDish() {
 
   var imageUrl = imgFile ? await uploadImage(imgFile, id) : undefined;
 
-  var payload = { name: name, name_en: nameEn, name_lv: nameLv, price: price || null, category_id: catId, description: desc, desc_en: descEn, desc_lv: descLv };
+  var payload = { name: name, price: price || null, category_id: catId, description: desc };
+  if (nameEn)  payload.name_en  = nameEn;
+  if (nameLv)  payload.name_lv  = nameLv;
+  if (descEn)  payload.desc_en  = descEn;
+  if (descLv)  payload.desc_lv  = descLv;
   if (imageUrl !== undefined) payload.image_url = imageUrl;
 
-  await MF_DB.from('dishes').update(payload).eq('id', id);
-  closeEditModal();
-  await loadMenu();
+  var { error: updErr } = await MF_DB.from('dishes').update(payload).eq('id', id);
+  if (!updErr) { closeEditModal(); await loadMenu(); }
+  else { alert('Ошибка: ' + updErr.message); }
 }
 
 /* ============ SETTINGS ============ */
@@ -718,7 +727,7 @@ async function saveSettings() {
   var name = document.getElementById('settingRestName').value.trim();
   if (!name) return;
   var alertEl = document.getElementById('settings-alert');
-  var { error } = await MF_DB.from('restaurants').update({ name: name, theme: currentTheme, lang: currentLang }).eq('id', currentUser.id);
+  var { error } = await MF_DB.from('restaurants').upsert({ id: currentUser.id, name: name, theme: currentTheme, lang: currentLang });
   if (!error) {
     restaurant.name = name; restaurant.theme = currentTheme;
     document.getElementById('sb-rest-name').textContent = name;
