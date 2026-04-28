@@ -419,7 +419,7 @@ var T = {
 };
 
 /* ============ LANG ============ */
-function setLang(l) { currentLang = l; localStorage.setItem('mf_lang', l); applyLang(); }
+function setLang(l) { currentLang = l; localStorage.setItem('mf_lang', l); applyLang(); renderCatSelect('newDishCat'); renderCatSelect('editDishCat'); }
 
 function applyLang() {
   var t = T[currentLang];
