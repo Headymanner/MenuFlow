@@ -532,44 +532,39 @@ function renderMenu() {
   categories.forEach(function(cat) {
     var catDishes = dishes.filter(function(d) { return d.category_id === cat.id; });
     html += '<div class="category-block"><div class="category-header"><span class="category-name">📂 ' + esc(cat.name) + '</span>';
-    html += '<div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" data-action="editcat" data-id="' + cat.id + '">✏️</button><button class="btn btn-danger btn-sm" data-action="deletecat" data-id="' + cat.id + '">🗑</button></div></div>';
+    html += '<div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openEditCat(\'' + cat.id + '\')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteCategory(\'' + cat.id + '\')">🗑</button></div></div>';
     if (!catDishes.length) html += '<div style="padding:8px 14px;color:#bbb;font-size:.85rem">' + T[currentLang].noItems + '</div>';
-    catDishes.forEach(function(d) { html += dishHTML(d); });
+    catDishes.forEach(function(d) {
+      var idx = dishes.indexOf(d);
+      html += dishHTML(d, idx);
+    });
     html += '</div>';
   });
   var noCatDishes = dishes.filter(function(d) { return !d.category_id; });
   if (noCatDishes.length) {
     html += '<div class="category-block"><div class="category-header"><span class="category-name">📂 ' + T[currentLang].noCat + '</span></div>';
-    noCatDishes.forEach(function(d) { html += dishHTML(d); });
+    noCatDishes.forEach(function(d) {
+      var idx = dishes.indexOf(d);
+      html += dishHTML(d, idx);
+    });
     html += '</div>';
   }
   el.innerHTML = html;
-  el.onclick = function(e) {
-    var btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    var action = btn.getAttribute('data-action');
-    var id = btn.getAttribute('data-id');
-    if (action === 'toggle') { toggleDish(id, btn.getAttribute('data-avail') === 'true'); }
-    else if (action === 'edit') { openEditDish(id); }
-    else if (action === 'delete') { deleteDish(id); }
-    else if (action === 'editcat') { openEditCat(id); }
-    else if (action === 'deletecat') { deleteCategory(id); }
-  };
 }
 
-function dishHTML(d) {
+function dishHTML(d, idx) {
+  var avail = d.available !== false;
   var imgHtml = d.image_url
     ? '<img class="dish-img-thumb" src="' + esc(d.image_url) + '" alt="">'
     : '<div class="dish-img-placeholder">🍽</div>';
-  var avail = d.available !== false;
-  return '<div class="dish-item" data-id="' + d.id + '">' + imgHtml +
+  return '<div class="dish-item">' + imgHtml +
     '<div class="dish-info"><div class="dish-name">' + esc(d.name) + '</div>' +
     (d.description ? '<div class="dish-desc">' + esc(d.description) + '</div>' : '') + '</div>' +
     '<div class="dish-price">' + (d.price ? d.price + ' €' : '—') + '</div>' +
     '<div class="dish-actions">' +
-    '<button class="toggle-available" data-action="toggle" data-id="' + d.id + '" data-avail="' + avail + '">' + (avail ? '✅' : '❌') + '</button>' +
-    '<button class="btn btn-secondary btn-sm" data-action="edit" data-id="' + d.id + '">✏️</button>' +
-    '<button class="btn btn-danger btn-sm" data-action="delete" data-id="' + d.id + '">🗑</button>' +
+    '<button class="toggle-available" onclick="toggleDishIdx(' + idx + ')">' + (avail ? '✅' : '❌') + '</button>' +
+    '<button class="btn btn-secondary btn-sm" onclick="openEditDishIdx(' + idx + ')">✏️</button>' +
+    '<button class="btn btn-danger btn-sm" onclick="deleteDishIdx(' + idx + ')">🗑</button>' +
     '</div></div>';
 }
 
@@ -782,6 +777,19 @@ async function loadStats() {
   document.getElementById('stat-avail').textContent  = avail;
   var views = (restaurant && restaurant.views) ? restaurant.views : '—';
   document.getElementById('stat-views').textContent  = views;
+}
+
+function toggleDishIdx(idx) {
+  var d = dishes[idx];
+  if (d) toggleDish(d.id, d.available !== false);
+}
+function openEditDishIdx(idx) {
+  var d = dishes[idx];
+  if (d) openEditDish(d.id);
+}
+function deleteDishIdx(idx) {
+  var d = dishes[idx];
+  if (d) deleteDish(d.id);
 }
 
 init();
