@@ -103,8 +103,9 @@ async function init() {
   }
 
   // Load restaurant
-  var { data: rest } = await MF_DB.from('restaurants').select('*').eq('id', restaurantId).maybeSingle();
-  if (!rest) { document.getElementById('spinner').innerHTML = '❌ Ресторан не найден'; return; }
+  var { data: restArr } = await MF_DB.from('restaurants').select('*').eq('id', restaurantId).limit(1);
+  if (!restArr || restArr.length === 0) { document.getElementById('spinner').innerHTML = '❌ Ресторан не найден'; return; }
+  var rest = restArr[0];
   restaurant = rest;
 
   // Apply theme
