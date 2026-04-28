@@ -532,7 +532,7 @@ function renderMenu() {
   categories.forEach(function(cat) {
     var catDishes = dishes.filter(function(d) { return d.category_id === cat.id; });
     html += '<div class="category-block"><div class="category-header"><span class="category-name">📂 ' + esc(cat.name) + '</span>';
-    html += '<div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openEditCat(\'' + cat.id + '\')">✏️</button><button class="btn btn-danger btn-sm" onclick="deleteCategory(\'' + cat.id + '\')">🗑</button></div></div>';
+    html += '<div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" data-action="editcat" data-id="' + cat.id + '">✏️</button><button class="btn btn-danger btn-sm" data-action="deletecat" data-id="' + cat.id + '">🗑</button></div></div>';
     if (!catDishes.length) html += '<div style="padding:8px 14px;color:#bbb;font-size:.85rem">' + T[currentLang].noItems + '</div>';
     catDishes.forEach(function(d) { html += dishHTML(d); });
     html += '</div>';
@@ -544,20 +544,32 @@ function renderMenu() {
     html += '</div>';
   }
   el.innerHTML = html;
+  el.onclick = function(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var action = btn.getAttribute('data-action');
+    var id = btn.getAttribute('data-id');
+    if (action === 'toggle') { toggleDish(id, btn.getAttribute('data-avail') === 'true'); }
+    else if (action === 'edit') { openEditDish(id); }
+    else if (action === 'delete') { deleteDish(id); }
+    else if (action === 'editcat') { openEditCat(id); }
+    else if (action === 'deletecat') { deleteCategory(id); }
+  };
 }
 
 function dishHTML(d) {
   var imgHtml = d.image_url
-    ? '<img class="dish-img-thumb" src="' + esc(d.image_url) + '" alt="">' 
+    ? '<img class="dish-img-thumb" src="' + esc(d.image_url) + '" alt="">'
     : '<div class="dish-img-placeholder">🍽</div>';
-  return '<div class="dish-item">' + imgHtml +
+  var avail = d.available !== false;
+  return '<div class="dish-item" data-id="' + d.id + '">' + imgHtml +
     '<div class="dish-info"><div class="dish-name">' + esc(d.name) + '</div>' +
     (d.description ? '<div class="dish-desc">' + esc(d.description) + '</div>' : '') + '</div>' +
     '<div class="dish-price">' + (d.price ? d.price + ' €' : '—') + '</div>' +
     '<div class="dish-actions">' +
-    '<button class="toggle-available" onclick="toggleDish(\'' + d.id + '\',' + d.available + ')">' + (d.available ? '✅' : '❌') + '</button>' +
-    '<button class="btn btn-secondary btn-sm" onclick="openEditDish(\'' + d.id + '\')">✏️</button>' +
-    '<button class="btn btn-danger btn-sm" onclick="deleteDish(\'' + d.id + '\')">🗑</button>' +
+    '<button class="toggle-available" data-action="toggle" data-id="' + d.id + '" data-avail="' + avail + '">' + (avail ? '✅' : '❌') + '</button>' +
+    '<button class="btn btn-secondary btn-sm" data-action="edit" data-id="' + d.id + '">✏️</button>' +
+    '<button class="btn btn-danger btn-sm" data-action="delete" data-id="' + d.id + '">🗑</button>' +
     '</div></div>';
 }
 
@@ -631,13 +643,7 @@ async function addDish() {
   var descEn  = document.getElementById('newDishDescEn').value.trim();
   var descLv  = document.getElementById('newDishDescLv').value.trim();
   var imgFile = document.getElementById('newDishImgFile').files[0];
-  var alertEl = document.getElementById('menu-alert');
-  if (!name) {
-    alertEl.className = 'alert error';
-    alertEl.textContent = '❌ Введите название блюда!';
-    setTimeout(function() { alertEl.className = 'alert'; }, 3000);
-    return;
-  }
+  if (!name) return;
 
   var imageUrl = imgFile ? await uploadImage(imgFile, Date.now()) : null;
 
