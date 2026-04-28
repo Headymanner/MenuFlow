@@ -495,7 +495,7 @@ async function init() {
 
 /* ============ RESTAURANT ============ */
 async function loadRestaurant() {
-  var { data } = await MF_DB.from('restaurants').select('*').eq('id', restaurantId).maybeSingle();
+  var { data } = await MF_DB.from('restaurants').select('*').eq('id', currentUser.id).maybeSingle();
   if (data) {
     restaurant = data;
     document.getElementById('sb-rest-name').textContent = data.name;
@@ -507,8 +507,8 @@ async function loadRestaurant() {
 
 /* ============ MENU ============ */
 async function loadMenu() {
-  var { data: cats }  = await MF_DB.from('categories').select('*').eq('restaurant_id', restaurantId).order('position');
-  var { data: dishs } = await MF_DB.from('dishes').select('*').eq('restaurant_id', restaurantId).order('position');
+  var { data: cats }  = await MF_DB.from('categories').select('*').eq('restaurant_id', currentUser.id).order('position');
+  var { data: dishs } = await MF_DB.from('dishes').select('*').eq('restaurant_id', currentUser.id).order('position');
   categories = cats  || [];
   dishes     = dishs || [];
   renderMenu();
@@ -585,7 +585,7 @@ function previewImg(input, previewId) {
 async function uploadImage(file, dishId) {
   if (!file) return null;
   var ext = file.name.split('.').pop();
-  var path = restaurantId + '/' + (dishId || Date.now()) + '.' + ext;
+  var path = currentUser.id + '/' + (dishId || Date.now()) + '.' + ext;
   var { data, error } = await MF_DB.storage.from('dish-images').upload(path, file, { upsert: true });
   if (error) { console.warn('Image upload error:', error.message); return null; }
   var { data: urlData } = MF_DB.storage.from('dish-images').getPublicUrl(path);
@@ -596,7 +596,7 @@ async function uploadImage(file, dishId) {
 async function addCategory() {
   var name = document.getElementById('newCatName').value.trim();
   if (!name) return;
-  await MF_DB.from('categories').insert({ restaurant_id: restaurantId, name: name, position: categories.length });
+  await MF_DB.from('categories').insert({ restaurant_id: currentUser.id, name: name, position: categories.length });
   document.getElementById('newCatName').value = '';
   await loadMenu();
 }
@@ -642,7 +642,7 @@ async function addDish() {
 
   var imageUrl = imgFile ? await uploadImage(imgFile, Date.now()) : null;
 
-  var payload = { restaurant_id: restaurantId, name: name, price: price || null, category_id: catId, description: desc, position: dishes.length };
+  var payload = { restaurant_id: currentUser.id, name: name, price: price || null, category_id: catId, description: desc, position: dishes.length };
   if (nameEn)  payload.name_en   = nameEn;
   if (nameLv)  payload.name_lv   = nameLv;
   if (descEn)  payload.desc_en   = descEn;
@@ -734,7 +734,7 @@ async function saveSettings() {
   var name = document.getElementById('settingRestName').value.trim();
   if (!name) return;
   var alertEl = document.getElementById('settings-alert');
-  var { error } = await MF_DB.from('restaurants').upsert({ id: restaurantId, name: name, theme: currentTheme, lang: currentLang });
+  var { error } = await MF_DB.from('restaurants').upsert({ id: currentUser.id, name: name, theme: currentTheme, lang: currentLang });
   if (!error) {
     if (!restaurant) restaurant = {};
     restaurant.name = name; restaurant.theme = currentTheme;
@@ -749,7 +749,7 @@ async function saveSettings() {
 /* ============ QR ============ */
 function generateQR() {
   if (!currentUser) return;
-  var publicUrl = 'https://menuflow.tech/menu.html?id=' + restaurantId;
+  var publicUrl = 'https://menuflow.tech/menu.html?id=' + currentUser.id;
   var qrApi = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=' + encodeURIComponent(publicUrl);
   document.getElementById('qr-img').src = qrApi;
   document.getElementById('qr-url').textContent = publicUrl;
@@ -759,7 +759,7 @@ function generateQR() {
 /* ============ PREVIEW ============ */
 function loadPreview() {
   if (!currentUser) return;
-  var url = 'https://menuflow.tech/menu.html?id=' + restaurantId;
+  var url = 'https://menuflow.tech/menu.html?id=' + currentUser.id;
   document.getElementById('preview-iframe').src = url;
   document.getElementById('preview-open-link').href = url;
 }
