@@ -495,7 +495,7 @@ async function init() {
 
 /* ============ RESTAURANT ============ */
 async function loadRestaurant() {
-  var { data } = await MF_DB.from('restaurants').select('*').eq('id', currentUser.id).single();
+  var { data } = await MF_DB.from('restaurants').select('*').eq('id', currentUser.id).maybeSingle();
   if (data) {
     restaurant = data;
     document.getElementById('sb-rest-name').textContent = data.name;
@@ -729,6 +729,7 @@ async function saveSettings() {
   var alertEl = document.getElementById('settings-alert');
   var { error } = await MF_DB.from('restaurants').upsert({ id: currentUser.id, name: name, theme: currentTheme, lang: currentLang });
   if (!error) {
+    if (!restaurant) restaurant = {};
     restaurant.name = name; restaurant.theme = currentTheme;
     document.getElementById('sb-rest-name').textContent = name;
     alertEl.className = 'alert success'; alertEl.textContent = T[currentLang].saved;
