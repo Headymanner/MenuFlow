@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Меню</title>
+  <style>
+    :root { --accent: #3B5BDB; --accent-dark: #2d4abf; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f6fa; min-height: 100vh; }
+
+    /* HEADER */
+    .header { background: var(--accent); color: #fff; padding: 24px 20px 20px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+    .header-logo { font-size: .75rem; opacity: .75; margin-bottom: 4px; letter-spacing: 1px; text-transform: uppercase; }
+    .header-name { font-size: 1.5rem; font-weight: 800; }
+    .lang-row { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+    .lang-btn { border: 1.5px solid rgba(255,255,255,.5); background: transparent; color: #fff; padding: 4px 12px; border-radius: 20px; cursor: pointer; font-size: .8rem; font-weight: 600; transition: background .15s; }
+    .lang-btn.active { background: #fff; color: var(--accent); }
+
+    /* NAV CATEGORIES */
+    .cat-nav { background: #fff; padding: 0 16px; overflow-x: auto; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,.06); scrollbar-width: none; }
+    .cat-nav::-webkit-scrollbar { display: none; }
+    .cat-nav-inner { display: inline-flex; gap: 4px; padding: 10px 0; }
+    .cat-nav-btn { border: none; background: transparent; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: .85rem; font-weight: 600; color: #666; white-space: nowrap; transition: background .15s, color .15s; }
+    .cat-nav-btn.active { background: var(--accent); color: #fff; }
+
+    /* CONTENT */
+    .content { max-width: 680px; margin: 0 auto; padding: 16px; }
+
+    /* CATEGORY */
+    .category-section { margin-bottom: 28px; }
+    .category-title { font-size: 1.1rem; font-weight: 800; color: #222; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--accent); display: inline-block; }
+
+    /* DISH CARD */
+    .dish-card { background: #fff; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 10px; display: flex; align-items: center; overflow: hidden; transition: transform .15s, box-shadow .15s; }
+    .dish-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,.1); }
+    .dish-card.unavailable { opacity: .5; }
+    .dish-img { width: 90px; height: 90px; object-fit: cover; flex-shrink: 0; }
+    .dish-no-img { width: 90px; height: 90px; background: #f0f2ff; display: flex; align-items: center; justify-content: center; font-size: 2rem; flex-shrink: 0; }
+    .dish-body { flex: 1; padding: 14px 16px; }
+    .dish-name { font-size: .95rem; font-weight: 700; color: #222; margin-bottom: 4px; }
+    .dish-desc { font-size: .82rem; color: #888; line-height: 1.4; margin-bottom: 6px; }
+    .dish-footer { display: flex; align-items: center; justify-content: space-between; }
+    .dish-price { font-size: 1rem; font-weight: 800; color: var(--accent); }
+    .dish-unavail-badge { font-size: .75rem; background: #fdecea; color: #c62828; padding: 2px 8px; border-radius: 10px; }
+
+    /* EMPTY / LOADING */
+    .spinner { text-align: center; padding: 60px 20px; color: #aaa; font-size: 1rem; }
+    .empty { text-align: center; padding: 60px 20px; color: #aaa; }
+    .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+
+    /* FOOTER */
+    .footer { text-align: center; padding: 24px; color: #bbb; font-size: .78rem; margin-top: 16px; }
+    .footer a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">🍽 MenuFlow</div>
+  <div class="header-name" id="rest-name">...</div>
+  <div class="lang-row" id="lang-row"></div>
+</div>
+
+<div class="cat-nav" id="cat-nav" style="display:none">
+  <div class="cat-nav-inner" id="cat-nav-inner"></div>
+</div>
+
+<div class="content">
+  <div class="spinner" id="spinner">⏳ Загрузка меню...</div>
+  <div id="menu-content" style="display:none"></div>
+  <div class="empty" id="empty-state" style="display:none">
+    <div class="empty-icon">🍽</div>
+    <div>Меню пока пусто</div>
+  </div>
+</div>
+
+<div class="footer">Powered by <a href="https://menuflow.tech" target="_blank">MenuFlow</a></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+var MF_DB = supabase.createClient(
+  'https://axidlwsjtgpehogbbjnt.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4aWRsd3NqdGdwZWhvZ2Jiam50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyNTEwNzgsImV4cCI6MjA5MjgyNzA3OH0.wPkXnLrxWHnRKnc1uMv1Z7YRcRDaOI2BiIAEInx3DIs'
+);
+
+var restaurantId = new URLSearchParams(window.location.search).get('id');
+var currentLang = localStorage.getItem('mf_menu_lang') || 'ru';
+var restaurant = null;
+var categories = [];
+var dishes = [];
+
+var LANGS = ['ru', 'en', 'lv'];
+var LANG_FLAGS = { ru: '🇷🇺', en: '🇬🇧', lv: '🇱🇻' };
+var LANG_LABELS = { ru: 'RU', en: 'EN', lv: 'LV' };
+var NO_ITEMS = { ru: 'Блюда появятся скоро', en: 'Dishes coming soon', lv: 'Ēdieni drīz' };
+var UNAVAIL = { ru: 'Недоступно', en: 'Unavailable', lv: 'Nav pieejams' };
+
+async function init() {
+  if (!restaurantId) {
+    document.getElementById('spinner').innerHTML = '❌ Не указан ID ресторана';
+    return;
+  }
+
+  // Load restaurant
+  var { data: rest } = await MF_DB.from('restaurants').select('*').eq('id', restaurantId).maybeSingle();
+  if (!rest) { document.getElementById('spinner').innerHTML = '❌ Ресторан не найден'; return; }
+  restaurant = rest;
+
+  // Apply theme
+  var themes = { blue:['#3B5BDB','#2d4abf'], green:['#2E7D32','#1b5e20'], orange:['#E65100','#bf360c'], red:['#C62828','#8e0000'], purple:['#6A1B9A','#4a148c'], teal:['#00838F','#005662'] };
+  var c = themes[rest.theme] || themes.blue;
+  document.documentElement.style.setProperty('--accent', c[0]);
+  document.documentElement.style.setProperty('--accent-dark', c[1]);
+  document.title = rest.name + ' — Меню';
+  document.getElementById('rest-name').textContent = rest.name;
+
+  // Set lang preference
+  if (rest.lang && !localStorage.getItem('mf_menu_lang')) currentLang = rest.lang;
+
+  // Increment views
+  MF_DB.from('restaurants').update({ views: (rest.views || 0) + 1 }).eq('id', restaurantId).then(function(){});
+
+  // Load menu
+  var { data: cats }  = await MF_DB.from('categories').select('*').eq('restaurant_id', restaurantId).order('position');
+  var { data: dishs } = await MF_DB.from('dishes').select('*').eq('restaurant_id', restaurantId).order('position');
+  categories = cats  || [];
+  dishes     = dishs || [];
+
+  buildLangRow();
+  renderMenu();
+
+  document.getElementById('spinner').style.display = 'none';
+  if (!categories.length && !dishes.length) {
+    document.getElementById('empty-state').style.display = 'block';
+  } else {
+    document.getElementById('menu-content').style.display = 'block';
+    document.getElementById('cat-nav').style.display = 'block';
+  }
+}
+
+function buildLangRow() {
+  // Only show langs that have at least some translated content or are the default
+  var langRow = document.getElementById('lang-row');
+  langRow.innerHTML = '';
+  LANGS.forEach(function(l) {
+    var btn = document.createElement('button');
+    btn.className = 'lang-btn' + (l === currentLang ? ' active' : '');
+    btn.textContent = LANG_FLAGS[l] + ' ' + LANG_LABELS[l];
+    btn.onclick = function() { setLang(l); };
+    langRow.appendChild(btn);
+  });
+}
+
+function setLang(l) {
+  currentLang = l;
+  localStorage.setItem('mf_menu_lang', l);
+  document.querySelectorAll('.lang-btn').forEach(function(b, i) {
+    b.classList.toggle('active', LANGS[i] === l);
+  });
+  renderMenu();
+}
+
+function getDishName(d) {
+  if (currentLang === 'en' && d.name_en) return d.name_en;
+  if (currentLang === 'lv' && d.name_lv) return d.name_lv;
+  return d.name || '';
+}
+
+function getDishDesc(d) {
+  if (currentLang === 'en' && d.desc_en) return d.desc_en;
+  if (currentLang === 'lv' && d.desc_lv) return d.desc_lv;
+  return d.description || '';
+}
+
+function getCatName(cat) {
+  if (currentLang === 'en' && cat.name_en) return cat.name_en;
+  if (currentLang === 'lv' && cat.name_lv) return cat.name_lv;
+  return cat.name || '';
+}
+
+function renderMenu() {
+  var el = document.getElementById('menu-content');
+  var navInner = document.getElementById('cat-nav-inner');
+  el.innerHTML = '';
+  navInner.innerHTML = '';
+
+  categories.forEach(function(cat, idx) {
+    var catDishes = dishes.filter(function(d) { return d.category_id === cat.id; });
+    if (!catDishes.length) return;
+
+    var catName = getCatName(cat);
+    var sectionId = 'cat-' + cat.id;
+
+    // Nav button
+    var navBtn = document.createElement('button');
+    navBtn.className = 'cat-nav-btn' + (idx === 0 ? ' active' : '');
+    navBtn.textContent = catName;
+    navBtn.onclick = function() {
+      document.getElementById(sectionId).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.querySelectorAll('.cat-nav-btn').forEach(function(b) { b.classList.remove('active'); });
+      navBtn.classList.add('active');
+    };
+    navInner.appendChild(navBtn);
+
+    // Section
+    var section = document.createElement('div');
+    section.className = 'category-section';
+    section.id = sectionId;
+    section.innerHTML = '<div class="category-title">' + esc(catName) + '</div>';
+
+    catDishes.forEach(function(d) {
+      var avail = d.available !== false;
+      var name = getDishName(d);
+      var desc = getDishDesc(d);
+      var card = document.createElement('div');
+      card.className = 'dish-card' + (avail ? '' : ' unavailable');
+
+      var imgHtml = d.image_url
+        ? '<img class="dish-img" src="' + esc(d.image_url) + '" alt="">' 
+        : '<div class="dish-no-img">🍽</div>';
+
+      card.innerHTML = imgHtml +
+        '<div class="dish-body">' +
+          '<div class="dish-name">' + esc(name) + '</div>' +
+          (desc ? '<div class="dish-desc">' + esc(desc) + '</div>' : '') +
+          '<div class="dish-footer">' +
+            '<div class="dish-price">' + (d.price ? d.price + ' €' : '') + '</div>' +
+            (!avail ? '<span class="dish-unavail-badge">' + UNAVAIL[currentLang] + '</span>' : '') +
+          '</div>' +
+        '</div>';
+      section.appendChild(card);
+    });
+
+    el.appendChild(section);
+  });
+
+  // Dishes without category
+  var noCatDishes = dishes.filter(function(d) { return !d.category_id; });
+  if (noCatDishes.length) {
+    var section = document.createElement('div');
+    section.className = 'category-section';
+    noCatDishes.forEach(function(d) {
+      var avail = d.available !== false;
+      var name = getDishName(d);
+      var desc = getDishDesc(d);
+      var card = document.createElement('div');
+      card.className = 'dish-card' + (avail ? '' : ' unavailable');
+      var imgHtml = d.image_url
+        ? '<img class="dish-img" src="' + esc(d.image_url) + '" alt="">' 
+        : '<div class="dish-no-img">🍽</div>';
+      card.innerHTML = imgHtml +
+        '<div class="dish-body"><div class="dish-name">' + esc(name) + '</div>' +
+        (desc ? '<div class="dish-desc">' + esc(desc) + '</div>' : '') +
+        '<div class="dish-footer"><div class="dish-price">' + (d.price ? d.price + ' €' : '') + '</div>' +
+        (!avail ? '<span class="dish-unavail-badge">' + UNAVAIL[currentLang] + '</span>' : '') +
+        '</div></div>';
+      section.appendChild(card);
+    });
+    el.appendChild(section);
+  }
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+init();
+</script>
+</body>
+</html>
