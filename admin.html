@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MenuFlow — Админ панель</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#f0f4f3;min-height:100vh}
+.topbar{background:#0a2420;padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.logo{color:#fff;font-weight:700;font-size:18px;display:flex;align-items:center;gap:8px}
+.logo span{background:#01696f;width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.user-area{display:flex;align-items:center;gap:16px;color:#9ca3af;font-size:14px}
+.btn-sm{padding:6px 14px;border-radius:8px;border:1px solid #374151;background:transparent;color:#9ca3af;cursor:pointer;font-size:13px}
+.btn-sm:hover{background:#1f2937;color:#fff}
+.layout{display:flex;min-height:calc(100vh - 60px)}
+.sidebar{width:240px;background:#fff;border-right:1px solid #e5e7eb;padding:24px 16px}
+.sidebar h3{font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding:0 8px}
+.nav-item{padding:10px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:500;color:#374151;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.nav-item:hover,.nav-item.active{background:#f0f4f3;color:#01696f}
+.main{flex:1;padding:32px}
+.page{display:none} .page.active{display:block}
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.page-header h1{font-size:24px;font-weight:700;color:#0a2420}
+.btn{padding:10px 20px;background:#01696f;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+.btn:hover{background:#015a5f}
+.btn-danger{background:#dc2626}
+.btn-danger:hover{background:#b91c1c}
+.btn-outline{background:transparent;border:1.5px solid #e5e7eb;color:#374151}
+.btn-outline:hover{border-color:#01696f;color:#01696f}
+.card{background:#fff;border-radius:16px;padding:24px;margin-bottom:20px;border:1px solid #e5e7eb}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+.stat{background:#fff;border-radius:14px;padding:20px;border:1px solid #e5e7eb}
+.stat-val{font-size:28px;font-weight:700;color:#0a2420}
+.stat-lbl{font-size:13px;color:#6b7280;margin-top:4px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;padding:8px 12px;border-bottom:1px solid #e5e7eb}
+td{padding:12px;border-bottom:1px solid #f3f4f6;font-size:14px;color:#374151}
+tr:last-child td{border-bottom:none}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.badge-green{background:#dcfce7;color:#16a34a}
+.badge-gray{background:#f3f4f6;color:#6b7280}
+.toggle{position:relative;width:40px;height:22px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;inset:0;background:#d1d5db;border-radius:22px;transition:.3s}
+.slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle input:checked + .slider{background:#01696f}
+.toggle input:checked + .slider:before{transform:translateX(18px)}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;display:none}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:20px;padding:32px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:20px;font-weight:700;margin-bottom:24px}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:6px}
+.fg input,.fg select,.fg textarea{width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none}
+.fg input:focus,.fg select:focus,.fg textarea:focus{border-color:#01696f}
+.fg textarea{resize:vertical;min-height:60px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-footer{display:flex;gap:12px;margin-top:24px}
+.allergen-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.allergen-chip{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;padding:6px 10px;border-radius:8px;border:1.5px solid #e5e7eb}
+.allergen-chip input{width:14px;height:14px;cursor:pointer}
+.allergen-chip:has(input:checked){border-color:#01696f;background:#f0fdf4}
+.empty{text-align:center;padding:48px;color:#9ca3af}
+.empty-icon{font-size:48px;margin-bottom:12px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span>M</span> MenuFlow</div>
+  <div class="user-area">
+    <span id="venueNameTop">—</span>
+    <button class="btn-sm" onclick="logout()">Выйти</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <h3>Меню</h3>
+    <div class="nav-item active" onclick="showPage('dashboard')">📊 Обзор</div>
+    <div class="nav-item" onclick="showPage('dishes')">🍽 Блюда</div>
+    <div class="nav-item" onclick="showPage('categories')">📂 Категории</div>
+    <div class="nav-item" onclick="showPage('qr')">📱 QR-код</div>
+    <div class="nav-item" onclick="showPage('settings')">⚙️ Настройки</div>
+    <div style="margin-top:24px;padding:14px;background:#f0fdf4;border-radius:12px;border:1px solid #bbf7d0">
+      <div style="font-size:12px;color:#16a34a;font-weight:600">✅ Меню активно</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:4px" id="menuLinkSidebar">menuflow.tech/menu/—</div>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h1>Добрый день! 👋</h1>
+        <button class="btn" onclick="window.open(menuUrl,'_blank')">Открыть меню →</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="stat-val" id="statDishes">—</div><div class="stat-lbl">Блюд в меню</div></div>
+        <div class="stat"><div class="stat-val" id="statVisible">—</div><div class="stat-lbl">Видимых</div></div>
+        <div class="stat"><div class="stat-val" id="statCats">—</div><div class="stat-lbl">Категорий</div></div>
+      </div>
+      <div class="card">
+        <h3 style="margin-bottom:16px;font-size:16px">🚀 Быстрые действия</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <button class="btn" onclick="showPage('dishes');openDishModal()">+ Добавить блюдо</button>
+          <button class="btn btn-outline" onclick="showPage('categories');openCatModal()">+ Категория</button>
+          <button class="btn btn-outline" onclick="showPage('qr')">📱 Мой QR-код</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DISHES -->
+    <div class="page" id="page-dishes">
+      <div class="page-header">
+        <h1>Блюда</h1>
+        <button class="btn" onclick="openDishModal()">+ Добавить блюдо</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>Блюдо</th><th>Категория</th><th>Цена</th><th>Видимость</th><th></th></tr></thead>
+          <tbody id="dishesTable"><tr><td colspan="5" class="empty">Загрузка...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CATEGORIES -->
+    <div class="page" id="page-categories">
+      <div class="page-header">
+        <h1>Категории</h1>
+        <button class="btn" onclick="openCatModal()">+ Добавить категорию</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table>
+          <thead><tr><th>Название (LV)</th><th>Название (RU)</th><th>Название (EN)</th><th></th></tr></thead>
+          <tbody id="catsTable"><tr><td colspan="4" class="empty">Загрузка...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- QR -->
+    <div class="page" id="page-qr">
+      <div class="page-header"><h1>QR-код вашего меню</h1></div>
+      <div class="card" style="text-align:center;max-width:400px">
+        <div id="qrcode" style="margin:0 auto 20px;width:200px;height:200px"></div>
+        <div id="menuLinkText" style="font-size:13px;color:#6b7280;margin-bottom:20px"></div>
+        <button class="btn" onclick="printQR()">🖨️ Распечатать QR</button>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="page-header"><h1>Настройки заведения</h1></div>
+      <div class="card" style="max-width:500px">
+        <div class="fg"><label>Название заведения</label><input id="sVenueName" type="text"></div>
+        <div class="fg"><label>Адрес</label><input id="sAddress" type="text" placeholder="Brīvības iela 1, Rīga"></div>
+        <div class="fg"><label>Телефон</label><input id="sPhone" type="text" placeholder="+371 2600 0000"></div>
+        <div class="fg"><label>Цвет бренда</label><input id="sBrandColor" type="color" value="#01696f" style="width:60px;height:40px;padding:2px;border-radius:8px;cursor:pointer"></div>
+        <button class="btn" onclick="saveSettings()">Сохранить</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DISH MODAL -->
+<div class="modal-bg" id="dishModal">
+  <div class="modal">
+    <h2 id="dishModalTitle">Добавить блюдо</h2>
+    <input type="hidden" id="dishId">
+    <div class="fg"><label>Категория</label><select id="dCat"></select></div>
+    <div class="grid2">
+      <div class="fg"><label>Название (LV)</label><input id="dNameLv" placeholder="Borša zupa"></div>
+      <div class="fg"><label>Название (RU)</label><input id="dNameRu" placeholder="Борщ"></div>
+    </div>
+    <div class="fg"><label>Название (EN)</label><input id="dNameEn" placeholder="Borscht soup"></div>
+    <div class="grid2">
+      <div class="fg"><label>Описание (LV)</label><textarea id="dDescLv"></textarea></div>
+      <div class="fg"><label>Описание (RU)</label><textarea id="dDescRu"></textarea></div>
+    </div>
+    <div class="fg"><label>Описание (EN)</label><textarea id="dDescEn"></textarea></div>
+    <div class="fg"><label>Цена (€)</label><input id="dPrice" type="number" step="0.01" placeholder="8.50"></div>
+    <div class="fg">
+      <label>Аллергены (14 EU)</label>
+      <div class="allergen-grid" id="allergenGrid"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="saveDish()">Сохранить</button>
+      <button class="btn btn-outline" onclick="closeDishModal()">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- CAT MODAL -->
+<div class="modal-bg" id="catModal">
+  <div class="modal">
+    <h2>Добавить категорию</h2>
+    <input type="hidden" id="catId">
+    <div class="fg"><label>Название (LV)</label><input id="cNameLv" placeholder="Zupas"></div>
+    <div class="fg"><label>Название (RU)</label><input id="cNameRu" placeholder="Супы"></div>
+    <div class="fg"><label>Название (EN)</label><input id="cNameEn" placeholder="Soups"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="saveCat()">Сохранить</button>
+      <button class="btn btn-outline" onclick="closeCatModal()">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const T = {
+  "lv": {
+    "nav_overview": "Pārskats",
+    "nav_dishes": "Ēdieni",
+    "nav_categories": "Kategorijas",
+    "nav_qr": "QR kods",
+    "nav_settings": "Iestatījumi",
+    "menu_active": "✅ Izvēlne aktīva",
+    "open_menu": "Atvērt izvēlni →",
+    "greeting": "Labdien! 👋",
+    "stat_dishes": "Ēdieni izvēlnē",
+    "stat_visible": "Redzami",
+    "stat_cats": "Kategorijas",
+    "quick_actions": "🚀 Ātrās darbības",
+    "add_dish": "+ Pievienot ēdienu",
+    "add_category": "+ Pievienot kategoriju",
+    "my_qr": "📱 Mans QR kods",
+    "col_dish": "Ēdiens",
+    "col_category": "Kategorija",
+    "col_price": "Cena",
+    "col_visibility": "Redzamība",
+    "dishes_empty": "Ēdienu pagaidām nav. Pievienojiet pirmo!",
+    "cats_empty": "Kategoriju pagaidām nav. Pievienojiet pirmo!",
+    "modal_add_dish": "Pievienot ēdienu",
+    "modal_edit_dish": "Rediģēt ēdienu",
+    "modal_add_cat": "Pievienot kategoriju",
+    "label_category": "Kategorija",
+    "label_no_cat": "— Bez kategorijas —",
+    "label_name_lv": "Nosaukums (LV)",
+    "label_name_ru": "Nosaukums (RU)",
+    "label_name_en": "Nosaukums (EN)",
+    "label_desc_lv": "Apraksts (LV)",
+    "label_desc_ru": "Apraksts (RU)",
+    "label_desc_en": "Apraksts (EN)",
+    "label_price": "Cena (€)",
+    "label_allergens": "Alergēni (14 ES vielas)",
+    "btn_save": "Saglabāt",
+    "btn_cancel": "Atcelt",
+    "btn_delete": "Dzēst",
+    "btn_edit": "Rediģēt",
+    "confirm_delete_dish": "Dzēst šo ēdienu?",
+    "confirm_delete_cat": "Dzēst šo kategoriju?",
+    "qr_title": "Jūsu izvēlnes QR kods",
+    "qr_print": "🖨️ Izdrukāt QR kodu",
+    "settings_title": "Iestādes iestatījumi",
+    "label_venue_name": "Iestādes nosaukums",
+    "label_address": "Adrese",
+    "label_phone": "Tālrunis",
+    "label_color": "Zīmola krāsa",
+    "btn_save_settings": "Saglabāt",
+    "settings_saved": "✅ Saglabāts!",
+    "logout": "Iziet"
+  },
+  "en": {
+    "nav_overview": "Overview",
+    "nav_dishes": "Dishes",
+    "nav_categories": "Categories",
+    "nav_qr": "QR Code",
+    "nav_settings": "Settings",
+    "menu_active": "✅ Menu is active",
+    "open_menu": "Open menu →",
+    "greeting": "Welcome! 👋",
+    "stat_dishes": "Dishes in menu",
+    "stat_visible": "Visible",
+    "stat_cats": "Categories",
+    "quick_actions": "🚀 Quick actions",
+    "add_dish": "+ Add dish",
+    "add_category": "+ Add category",
+    "my_qr": "📱 My QR code",
+    "col_dish": "Dish",
+    "col_category": "Category",
+    "col_price": "Price",
+    "col_visibility": "Visibility",
+    "dishes_empty": "No dishes yet. Add your first one!",
+    "cats_empty": "No categories yet. Add your first one!",
+    "modal_add_dish": "Add dish",
+    "modal_edit_dish": "Edit dish",
+    "modal_add_cat": "Add category",
+    "label_category": "Category",
+    "label_no_cat": "— No category —",
+    "label_name_lv": "Name (LV)",
+    "label_name_ru": "Name (RU)",
+    "label_name_en": "Name (EN)",
+    "label_desc_lv": "Description (LV)",
+    "label_desc_ru": "Description (RU)",
+    "label_desc_en": "Description (EN)",
+    "label_price": "Price (€)",
+    "label_allergens": "Allergens (14 EU substances)",
+    "btn_save": "Save",
+    "btn_cancel": "Cancel",
+    "btn_delete": "Delete",
+    "btn_edit": "Edit",
+    "confirm_delete_dish": "Delete this dish?",
+    "confirm_delete_cat": "Delete this category?",
+    "qr_title": "Your menu QR code",
+    "qr_print": "🖨️ Print QR code",
+    "settings_title": "Venue settings",
+    "label_venue_name": "Venue name",
+    "label_address": "Address",
+    "label_phone": "Phone",
+    "label_color": "Brand colour",
+    "btn_save_settings": "Save changes",
+    "settings_saved": "✅ Saved!",
+    "logout": "Log out"
+  },
+  "ru": {
+    "nav_overview": "Обзор",
+    "nav_dishes": "Блюда",
+    "nav_categories": "Категории",
+    "nav_qr": "QR-код",
+    "nav_settings": "Настройки",
+    "menu_active": "✅ Меню активно",
+    "open_menu": "Открыть меню →",
+    "greeting": "Добрый день! 👋",
+    "stat_dishes": "Блюд в меню",
+    "stat_visible": "Видимых",
+    "stat_cats": "Категорий",
+    "quick_actions": "🚀 Быстрые действия",
+    "add_dish": "+ Добавить блюдо",
+    "add_category": "+ Добавить категорию",
+    "my_qr": "📱 Мой QR-код",
+    "col_dish": "Блюдо",
+    "col_category": "Категория",
+    "col_price": "Цена",
+    "col_visibility": "Видимость",
+    "dishes_empty": "Блюд пока нет. Добавьте первое!",
+    "cats_empty": "Категорий пока нет. Добавьте первую!",
+    "modal_add_dish": "Добавить блюдо",
+    "modal_edit_dish": "Редактировать блюдо",
+    "modal_add_cat": "Добавить категорию",
+    "label_category": "Категория",
+    "label_no_cat": "— Без категории —",
+    "label_name_lv": "Название (LV)",
+    "label_name_ru": "Название (RU)",
+    "label_name_en": "Название (EN)",
+    "label_desc_lv": "Описание (LV)",
+    "label_desc_ru": "Описание (RU)",
+    "label_desc_en": "Описание (EN)",
+    "label_price": "Цена (€)",
+    "label_allergens": "Аллергены (14 веществ ЕС)",
+    "btn_save": "Сохранить",
+    "btn_cancel": "Отмена",
+    "btn_delete": "Удалить",
+    "btn_edit": "Редактировать",
+    "confirm_delete_dish": "Удалить это блюдо?",
+    "confirm_delete_cat": "Удалить эту категорию?",
+    "qr_title": "QR-код вашего меню",
+    "qr_print": "🖨️ Распечатать QR-код",
+    "settings_title": "Настройки заведения",
+    "label_venue_name": "Название заведения",
+    "label_address": "Адрес",
+    "label_phone": "Телефон",
+    "label_color": "Цвет бренда",
+    "btn_save_settings": "Сохранить изменения",
+    "settings_saved": "✅ Сохранено!",
+    "logout": "Выйти"
+  }
+};
+const A_LABELS = { ru: ["🌾 Глютен (злаки)", "🦐 Ракообразные", "🥚 Яйца", "🐟 Рыба", "🥜 Арахис", "🫘 Соя", "🥛 Молоко / Лактоза", "🌰 Орехи", "🌿 Сельдерей", "🟡 Горчица", "⚪ Кунжут", "🍷 SO₂ / Сульфиты", "🌸 Люпин", "🦪 Моллюски"], en: ["🌾 Gluten (cereals)", "🦐 Crustaceans", "🥚 Eggs", "🐟 Fish", "🥜 Peanuts", "🫘 Soybeans", "🥛 Milk / Lactose", "🌰 Tree Nuts", "🌿 Celery", "🟡 Mustard", "⚪ Sesame seeds", "🍷 SO₂ / Sulphites", "🌸 Lupin", "🦪 Molluscs"], lv: ["🌾 Graudaugi ar lipekli", "🦐 Vēžveidīgie", "🥚 Olas", "🐟 Zivis", "🥜 Zemesrieksti", "🫘 Sojas pupas", "🥛 Piens", "🌰 Rieksti", "🌿 Selerijas", "🟡 Sinepes", "⚪ Sezama sēklas", "🍷 Sēra dioksīds / Sulfīti", "🌸 Lupīna", "🦪 Gliemji"] };
+const A_VALS = ["Graudaugi ar lipekli", "Vēžveidīgie", "Olas", "Zivis", "Zemesrieksti", "Sojas pupas", "Piens", "Rieksti", "Selerijas", "Sinepes", "Sezama sēklas", "Sēra dioksīds / Sulfīti", "Lupīna", "Gliemji"];
+
+const sb = supabase.createClient('https://axidlwsjtgpehogbbjnt.supabase.co', 'sb_publishable_ZS6ZycAeFtWD9txUu5IEBw_VXwAvat8');
+
+const ALLERGENS = ['Glūtēns','Vēžveidīgie','Olas','Zivis','Zemesrieksti','Sojas pupas','Piens','Rieksti','Selerijas','Sinepes','Sezams','SO₂','Lupīnas','Gliemji'];
+const ALLERGENS_RU = ['Глютен','Ракообразные','Яйца','Рыба','Арахис','Соя','Молоко','Орехи','Сельдерей','Горчица','Кунжут','SO₂','Люпин','Моллюски'];
+
+var venueId = null, venueSlug = null, menuUrl = '#', categories = [], dishes = [];
+
+async function init() {
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session) { window.location.href='register.html'; return; }
+
+  const {data:venue} = await sb.from('venues').select('*').eq('owner_id', session.user.id).single();
+  if(venue) {
+    venueId = venue.id; venueSlug = venue.slug;
+    menuUrl = window.location.origin + '/menu.html?id=' + venueSlug;
+    document.getElementById('venueNameTop').textContent = venue.name;
+    document.getElementById('menuLinkSidebar').textContent = menuUrl.replace('https://','');
+    document.getElementById('menuLinkText').textContent = menuUrl;
+    document.getElementById('sVenueName').value = venue.name;
+    document.getElementById('sAddress').value = venue.address||'';
+    document.getElementById('sPhone').value = venue.phone||'';
+    document.getElementById('sBrandColor').value = venue.brand_color||'#01696f';
+    generateQR();
+    await loadCategories(); await loadDishes();
+  }
+  buildAllergenGrid();
+}
+
+async function loadCategories() {
+  const {data} = await sb.from('categories').select('*').eq('venue_id', venueId).order('sort_order');
+  categories = data||[];
+  renderCatsTable(); renderCatSelect();
+  document.getElementById('statCats').textContent = categories.length;
+}
+
+async function loadDishes() {
+  const {data} = await sb.from('dishes').select('*').eq('venue_id', venueId).order('created_at');
+  dishes = data||[];
+  renderDishesTable();
+  document.getElementById('statDishes').textContent = dishes.length;
+  document.getElementById('statVisible').textContent = dishes.filter(d=>d.visible).length;
+}
+
+function renderDishesTable() {
+  const tbody = document.getElementById('dishesTable');
+  if(!dishes.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><div class="empty-icon">🍽</div>Блюд пока нет. Добавьте первое!</div></td></tr>'; return; }
+  tbody.innerHTML = dishes.map(d => {
+    const cat = categories.find(c=>c.id===d.category_id);
+    return `<tr>
+      <td><strong>${d.name_ru}</strong><br><span style="font-size:12px;color:#9ca3af">${d.name_lv}</span></td>
+      <td>${cat?cat.name_ru:'—'}</td>
+      <td>€${parseFloat(d.price).toFixed(2)}</td>
+      <td><label class="toggle"><input type="checkbox" ${d.visible?'checked':''} onchange="toggleDish('${d.id}',this.checked)"><span class="slider"></span></label></td>
+      <td style="display:flex;gap:8px">
+        <button class="btn btn-outline" style="padding:6px 10px;font-size:12px" onclick="editDish('${d.id}')">✏️</button>
+        <button class="btn btn-danger" style="padding:6px 10px;font-size:12px" onclick="deleteDish('${d.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCatsTable() {
+  const tbody = document.getElementById('catsTable');
+  if(!categories.length) { tbody.innerHTML = '<tr><td colspan="4"><div class="empty"><div class="empty-icon">📂</div>Категорий нет. Добавьте первую!</div></td></tr>'; return; }
+  tbody.innerHTML = categories.map(c => `<tr>
+    <td>${c.name_lv}</td><td>${c.name_ru}</td><td>${c.name_en}</td>
+    <td style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="padding:6px 10px;font-size:12px" onclick="editCat('${c.id}')">✏️</button>
+      <button class="btn btn-danger" style="padding:6px 10px;font-size:12px" onclick="deleteCat('${c.id}')">🗑</button>
+    </td>
+  </tr>`).join('');
+}
+
+function renderCatSelect() {
+  const sel = document.getElementById('dCat');
+  sel.innerHTML = '<option value="">— Без категории —</option>' + categories.map(c=>`<option value="${c.id}">${c.name_ru}</option>`).join('');
+}
+
+function buildAllergenGrid() {
+  document.getElementById('allergenGrid').innerHTML = ALLERGENS_RU.map((a,i)=>
+    `<label class="allergen-chip"><input type="checkbox" value="${ALLERGENS[i]}"> ${a}</label>`
+  ).join('');
+}
+
+// DISH MODAL
+function openDishModal(dish) {
+  document.getElementById('dishModalTitle').textContent = dish ? 'Редактировать блюдо' : 'Добавить блюдо';
+  document.getElementById('dishId').value = dish?dish.id:'';
+  document.getElementById('dCat').value = dish?dish.category_id||'':'';
+  ['Lv','Ru','En'].forEach(l=>{
+    document.getElementById('dName'+l).value = dish?dish['name_'+l.toLowerCase()]:'';
+    document.getElementById('dDesc'+l).value = dish?dish['description_'+l.toLowerCase()]||'':'';
+  });
+  document.getElementById('dPrice').value = dish?dish.price:'';
+  document.querySelectorAll('#allergenGrid input').forEach(cb=>{cb.checked=dish&&dish.allergens&&dish.allergens.includes(cb.value);});
+  document.getElementById('dishModal').classList.add('open');
+}
+
+function closeDishModal() { document.getElementById('dishModal').classList.remove('open'); }
+
+function editDish(id) { openDishModal(dishes.find(d=>d.id===id)); }
+
+async function saveDish() {
+  const id = document.getElementById('dishId').value;
+  const allergens = [...document.querySelectorAll('#allergenGrid input:checked')].map(c=>c.value);
+  const data = {
+    venue_id: venueId,
+    category_id: document.getElementById('dCat').value||null,
+    name_lv: document.getElementById('dNameLv').value,
+    name_ru: document.getElementById('dNameRu').value,
+    name_en: document.getElementById('dNameEn').value,
+    description_lv: document.getElementById('dDescLv').value,
+    description_ru: document.getElementById('dDescRu').value,
+    description_en: document.getElementById('dDescEn').value,
+    price: parseFloat(document.getElementById('dPrice').value),
+    allergens, visible: true
+  };
+  if(id) await sb.from('dishes').update(data).eq('id',id);
+  else await sb.from('dishes').insert(data);
+  closeDishModal(); await loadDishes();
+}
+
+async function toggleDish(id, visible) {
+  await sb.from('dishes').update({visible}).eq('id',id);
+  dishes = dishes.map(d=>d.id===id?{...d,visible}:d);
+  document.getElementById('statVisible').textContent = dishes.filter(d=>d.visible).length;
+}
+
+async function deleteDish(id) {
+  if(!confirm('Удалить блюдо?')) return;
+  await sb.from('dishes').delete().eq('id',id);
+  await loadDishes();
+}
+
+// CAT MODAL
+function openCatModal(cat) {
+  document.getElementById('catId').value = cat?cat.id:'';
+  document.getElementById('cNameLv').value = cat?cat.name_lv:'';
+  document.getElementById('cNameRu').value = cat?cat.name_ru:'';
+  document.getElementById('cNameEn').value = cat?cat.name_en:'';
+  document.getElementById('catModal').classList.add('open');
+}
+function closeCatModal() { document.getElementById('catModal').classList.remove('open'); }
+function editCat(id) { openCatModal(categories.find(c=>c.id===id)); }
+
+async function saveCat() {
+  const id = document.getElementById('catId').value;
+  const data = { venue_id:venueId, name_lv:document.getElementById('cNameLv').value, name_ru:document.getElementById('cNameRu').value, name_en:document.getElementById('cNameEn').value };
+  if(id) await sb.from('categories').update(data).eq('id',id);
+  else await sb.from('categories').insert(data);
+  closeCatModal(); await loadCategories();
+}
+
+async function deleteCat(id) {
+  if(!confirm('Удалить категорию?')) return;
+  await sb.from('categories').delete().eq('id',id);
+  await loadCategories();
+}
+
+async function saveSettings() {
+  await sb.from('venues').update({
+    name: document.getElementById('sVenueName').value,
+    address: document.getElementById('sAddress').value,
+    phone: document.getElementById('sPhone').value,
+    brand_color: document.getElementById('sBrandColor').value
+  }).eq('id',venueId);
+  document.getElementById('venueNameTop').textContent = document.getElementById('sVenueName').value;
+  alert('✅ Сохранено!');
+}
+
+function generateQR() {
+  document.getElementById('qrcode').innerHTML = '';
+  new QRCode(document.getElementById('qrcode'), {text:menuUrl, width:200, height:200, colorDark:'#0a2420', colorLight:'#ffffff'});
+}
+
+function printQR() { window.print(); }
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+async function logout() { await sb.auth.signOut(); window.location.href='register.html'; }
+
+init();
+</script>
+</body>
+</html>
