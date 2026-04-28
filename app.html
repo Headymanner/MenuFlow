@@ -589,8 +589,12 @@ async function uploadImage(file, dishId) {
 async function addCategory() {
   var name = document.getElementById('newCatName').value.trim();
   if (!name) return;
-  await MF_DB.from('categories').insert({ restaurant_id: currentUser.id, name: name, position: categories.length });
+  var alertEl = document.getElementById('menu-alert');
+  var { error } = await MF_DB.from('categories').insert({ restaurant_id: currentUser.id, name: name, position: categories.length });
+  if (error) { alertEl.className = 'alert error'; alertEl.textContent = '❌ Категория: ' + error.message; return; }
   document.getElementById('newCatName').value = '';
+  alertEl.className = 'alert success'; alertEl.textContent = '✅ Категория добавлена!';
+  setTimeout(function() { alertEl.className = 'alert'; }, 2000);
   await loadMenu();
 }
 
